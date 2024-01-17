@@ -10,8 +10,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-start_date = '2023-06-01'
-end_date = '2023-07-01'
+start_date = '2023-12-01'
+end_date = '2024-01-01'
+
 
 def round_minutes(v_minutes: int) -> int:
     if 15 > v_minutes > 2:
@@ -26,7 +27,8 @@ def round_minutes(v_minutes: int) -> int:
     return floored
 
 
-issue_pattern = re.compile(r'^(?:#\d+\s+)?(?:([a-z]+-\d+)|(?:hotfix|feature)(?:\s+-\s+|/)([a-z]+[- ]\d+))(\D.*)?', re.IGNORECASE)
+issue_pattern = re.compile(r'^(?:#\d+\s+)?(?:([a-z]+-\d+)|(?:\[([a-z]+-\d+)])|(?:hotfix|feature)(?:\s+-\s+|/)([a-z]+[- ]\d+))(\D.*)?',
+                           re.IGNORECASE)
 tag_pattern = re.compile(r'^\w+-\d+$')
 
 api_token = os.getenv('toggl_api_token')
@@ -50,7 +52,7 @@ for entry in data:
     match = issue_pattern.match(entry['description'])
 
     if match is None:
-        print(f"Could not match issue tag for description: {entry['description']}")
+        print(f"Could not match issue tag for description: '{entry['description']}' logged: {entry['start']}")
         tag = input('Enter tag manually: ')
         description = input('Enter tag description: ')
     else:
@@ -59,13 +61,16 @@ for entry in data:
         if tag is None:
             tag = match.group(2)
 
-        description = match.group(3)
+        if tag is None:
+            tag = match.group(3)
+
+        description = match.group(4)
 
     if ' ' in tag:
         tag = tag.replace(' ', '-')
 
     if tag_pattern.match(tag) is None:
-        print(f"Could not match issue tag for description: {entry['description']}")
+        print(f"Could not match issue tag for description: '{entry['description']}' logged: {entry['start']}")
         tag = input('Enter tag manually: ')
         description = input('Enter tag description: ')
 

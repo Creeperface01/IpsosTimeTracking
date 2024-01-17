@@ -263,3 +263,5 @@ cython_debug/
 *.json
 
 test*
+!/jira_itime_task_mapping.json
+!/jira_account_mapping.example.json

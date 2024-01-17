@@ -1,0 +1,24 @@
+{
+  "default": "C0001",
+  "issues": {
+    "DPMT-3": "N0010",
+    "DPMT-4": "N0041",
+    "DPMT-26": "N0013",
+    "DPMT-21": "N0008",
+    "DPMT-20": "N0008"
+  },
+  "projects": {
+    "P29239002": "N0003",
+    "P529202001": "N0003",
+    "P29201003": "N0003",
+    "Admin": "N0010"
+  },
+  "task_names": {
+    "C0001": "Standardni prace na jobu_OPS",
+    "N0010": "Administrativa a management",
+    "N0041": "Training  in person internal",
+    "N0013": "Nahradni volno",
+    "N0008": "Nemoc",
+    "N0003": "P projekty"
+  }
+}
