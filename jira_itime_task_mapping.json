@@ -11,6 +11,8 @@
     "P29239002": "N0003",
     "P529202001": "N0003",
     "P29201003": "N0003",
+    "P529202013": "N000335",
+    "P529202014": "N000335",
     "Admin": "N0010"
   },
   "task_names": {
@@ -19,6 +21,7 @@
     "N0041": "Training  in person internal",
     "N0013": "Nahradni volno",
     "N0008": "Nemoc",
-    "N0003": "P projekty"
+    "N0003": "P projekty",
+    "N000335": "Product/Platform Development"
   }
 }

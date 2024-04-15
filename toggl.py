@@ -10,9 +10,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-start_date = '2023-12-01'
-end_date = '2024-01-01'
-
 
 def round_minutes(v_minutes: int) -> int:
     if 15 > v_minutes > 2:
@@ -27,76 +24,95 @@ def round_minutes(v_minutes: int) -> int:
     return floored
 
 
-issue_pattern = re.compile(r'^(?:#\d+\s+)?(?:([a-z]+-\d+)|(?:\[([a-z]+-\d+)])|(?:hotfix|feature)(?:\s+-\s+|/)([a-z]+[- ]\d+))(\D.*)?',
-                           re.IGNORECASE)
-tag_pattern = re.compile(r'^\w+-\d+$')
+def import_entries(start_date: str, end_date: str):
+    print('Starting import of entries from toggl between {} and {}'.format(start_date, end_date))
+    issue_pattern = re.compile(r'^(?:#\d+\s+)?(?:([a-z]+-\d+)|(?:\[([a-z]+-\d+)])|(?:hotfix|feature)(?:\s+-\s+|/)([a-z]+[- ]\d+))(\D.*)?',
+                               re.IGNORECASE)
+    tag_pattern = re.compile(r'^\w+-\d+$')
 
-api_token = os.getenv('toggl_api_token')
+    api_token = os.getenv('toggl_api_token')
 
-response = requests.get(
-    'https://api.track.toggl.com/api/v9/me/time_entries',
-    headers={
-        'content-type': 'application/json',
-        'Authorization': 'Basic %s' % b64encode(f"{api_token}:api_token".encode('ascii')).decode("ascii")
-    },
-    params={
-        'start_date': start_date,
-        'end_date': end_date
-    }
-)
+    response = requests.get(
+        'https://api.track.toggl.com/api/v9/me/time_entries',
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Basic %s' % b64encode(f"{api_token}:api_token".encode('ascii')).decode("ascii")
+        },
+        params={
+            'start_date': start_date,
+            'end_date': end_date
+        }
+    )
 
-data = response.json()
+    data = response.json()
 
-entries = []
-for entry in data:
-    match = issue_pattern.match(entry['description'])
+    entries = []
+    for entry in data:
+        try:
+            if entry['stop'] is None:  # timer is currently still running
+                continue
 
-    if match is None:
-        print(f"Could not match issue tag for description: '{entry['description']}' logged: {entry['start']}")
-        tag = input('Enter tag manually: ')
-        description = input('Enter tag description: ')
-    else:
-        tag = match.group(1)
+            match = issue_pattern.match(entry['description'])
 
-        if tag is None:
-            tag = match.group(2)
+            if match is None:
+                print(f"Could not match issue tag for description: '{entry['description']}' logged: {entry['start']}")
+                tag = input('Enter tag manually: ')
+                description = input('Enter tag description: ')
+            else:
+                tag = match.group(1)
 
-        if tag is None:
-            tag = match.group(3)
+                if tag is None:
+                    tag = match.group(2)
 
-        description = match.group(4)
+                if tag is None:
+                    tag = match.group(3)
 
-    if ' ' in tag:
-        tag = tag.replace(' ', '-')
+                description = match.group(4)
 
-    if tag_pattern.match(tag) is None:
-        print(f"Could not match issue tag for description: '{entry['description']}' logged: {entry['start']}")
-        tag = input('Enter tag manually: ')
-        description = input('Enter tag description: ')
+            if ' ' in tag:
+                tag = tag.replace(' ', '-')
 
-    start = parser.isoparse(entry['start'])
-    stop = parser.isoparse(entry['stop'])
+            if tag_pattern.match(tag) is None:
+                print(f"Could not match issue tag for description: '{entry['description']}' logged: {entry['start']}")
+                tag = input('Enter tag manually: ')
+                description = input('Enter tag description: ')
 
-    if start.date() != stop.date():
-        raise ValueError(f"Invalid date range - {entry['start']} - {entry['stop']}")
+            start = parser.isoparse(entry['start'])
+            stop = parser.isoparse(entry['stop'])
 
-    minutes = int((stop - start).total_seconds() / 60)
-    minutes = round_minutes(minutes)
+            if start.date() != stop.date():
+                raise ValueError(f"Invalid date range - {entry['start']} - {entry['stop']}")
 
-    if minutes == 0:
-        continue
+            minutes = int((stop - start).total_seconds() / 60)
+            minutes = round_minutes(minutes)
 
-    if description is not None:
-        description = description.strip()
+            if minutes == 0:
+                continue
 
-    entries.append({
-        'tag': tag,
-        'date': start,
-        'minutes': minutes,
-        'description': description
-    })
+            if description is not None:
+                description = description.strip()
 
-entries.sort(key=lambda x: x['date'])
+            entries.append({
+                'tag': tag,
+                'date': start,
+                'minutes': minutes,
+                'description': description
+            })
+        except Exception as e:
+            print('Error while importing entry: {}'.format(entry))
+            raise e
 
-with io.open('toggl-parsed.json', 'w') as f:
-    f.write(json.dumps(entries, default=str, ensure_ascii=False))
+
+    entries.sort(key=lambda x: x['date'])
+
+    with io.open('toggl-parsed.json', 'w') as f:
+        f.write(json.dumps(entries, default=str, ensure_ascii=False))
+
+    print('Successfully imported {} entries'.format(len(entries)))
+
+
+if __name__ == '__main__':
+    import_entries(
+        '2024-04-01',
+        '2024-04-08'
+    )

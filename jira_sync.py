@@ -43,6 +43,7 @@ def get_issue_id(issue_key: str) -> int:
         while True:
             try:
                 issue = jira.issue(issue_key)
+                issues[issue_key] = int(issue.id)
                 issues[issue.key] = int(issue.id)
                 break
             except JIRAError as error:
@@ -54,28 +55,38 @@ def get_issue_id(issue_key: str) -> int:
     return issues[issue_key]
 
 
-for entry in data:
-    tag = entry['tag']
-    start_date = parser.parse(entry['date'])
-    minutes = entry['minutes']
-    description = entry['description']
+def import_to_jira():
+    print('Starting JIRA import')
 
-    if description is None:
-        description = ''
+    for entry in data:
+        tag = entry['tag']
+        start_date = parser.parse(entry['date'])
+        minutes = entry['minutes']
+        description = entry['description']
 
-    print('Posting [%s] - %s - %s' % (start_date.strftime('%Y-%m-%d %H:%M:%S'), tag, description))
+        if description is None:
+            description = ''
 
-    post_data = {
-        'authorAccountId': user_id,
-        'description': description,
-        'issueId': get_issue_id(tag),
-        'timeSpentSeconds': minutes * 60,
-        'startDate': start_date.strftime('%Y-%m-%d'),
-        'startTime': start_date.strftime('%H:%M:%S')
-    }
+        print('Posting [%s] - %s - %s' % (start_date.strftime('%Y-%m-%d %H:%M:%S'), tag, description))
 
-    response = requests.post(
-        f'{tempo_api_url}/worklogs',
-        headers=auth_headers,
-        json=post_data
-    )
+        post_data = {
+            'authorAccountId': user_id,
+            'description': description,
+            'issueId': get_issue_id(tag),
+            'timeSpentSeconds': minutes * 60,
+            'startDate': start_date.strftime('%Y-%m-%d'),
+            'startTime': start_date.strftime('%H:%M:%S')
+        }
+
+        response = requests.post(
+            f'{tempo_api_url}/worklogs',
+            headers=auth_headers,
+            json=post_data
+        )
+
+        if response.status_code != 200:
+            print('Error posting: ' + response.text)
+
+
+if __name__ == '__main__':
+    import_to_jira()

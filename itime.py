@@ -158,7 +158,7 @@ def get_tempo_worklogs(date_from: datetime, date_to: datetime):
     }
 
     response = requests.post(
-        f'{tempo_api_url}/worklogs/search/',
+        f'{tempo_api_url}/worklogs/search?limit=1000',
         headers=tempo_auth_headers,
         json=get_data
     )
@@ -250,8 +250,6 @@ def get_first_not_submitted_week() -> (str, date, date):
             time_sheet = option
             break
 
-    print(time_sheet)
-
     if time_sheet is None:
         print('create new sheet')
         # create new timesheet if not exists
@@ -261,15 +259,11 @@ def get_first_not_submitted_week() -> (str, date, date):
 
         date_input = timesheet_soup.select_one('#cal-field-1')
         date_label = date_input.parent.select_one('font')
-        print(date_label)
 
         match = TIME_CARD_DATE_REGEX.findall(date_label.text.strip())
-        print(match)
         time_card_id = timesheet_soup.select_one('input[name="TmCrdID"]').attrs['value']
     else:
         match = TIME_CARD_DATE_REGEX.findall(time_sheet.text.strip())
-        print(time_sheet.text.strip())
-        print(match)
         time_card_id = time_sheet.attrs['value']
 
     end = datetime.strptime(match[0], ITIME_DATE_FORMAT).date()
@@ -279,7 +273,7 @@ def get_first_not_submitted_week() -> (str, date, date):
 
 
 PERSONAL_PROJECTS_LIST_ID = 'EmplyPrjct_Lst'
-PROJECT_ID_REGEX = re.compile(r"\d{2}-\d{6}(?:[\d-]+)?")
+PROJECT_ID_REGEX = re.compile(r"(?:\d{2}-\d{6}(?:[\d-]+)?)|\d{8,}")
 
 SEARCH_PROJECTS_LIST_ID = 'Prjct_Lst'
 
@@ -323,7 +317,7 @@ def find_and_add_itime_project(jira_account: str, project_id: str, existing_proj
 
     project_id = project_list[0].attrs['value']
 
-    jira_account_itime_mapping[jira_account] = project_id
+    jira_account_itime_mapping[jira_account] = project_id  # TODO: update account mapping file
 
     if project_id in existing_projects:
         return project_id
@@ -516,8 +510,6 @@ def submit_report(
     days = get_week_day_map(date_from)
 
     account_task_map = group_jira_entries_by_account_and_task(entries, account_mapping)
-    debug_file('account_task_map.json', json.dumps(account_task_map))
-    exit(0)
 
     day_totals = {}
     for day in days.values():
@@ -567,90 +559,6 @@ def submit_report(
 
     print('Report successfully submitted!')
 
-    # TmCrdID: 338865
-    # ChangedSbmt: Y
-    # ChargeableHours: sChargeableHours
-    # Save & ReCalculate:
-    # MissingWkend: 1 / 1 / 1900
-    # TmCrdID2: 338865
-    # wk_end: 06 / 04 / 2023
-    # dvsn_nm: 529202
-    # TimeCardRowCount: 2
-    # ConfiguredAddRows: 1
-    # ChartWkEnd: 06 / 04 / 2023
-    # ChangedDtls: Y
-    # tot1_c3: 3.00
-    # tot1_c4: 1.00
-    # tot1_c5: 1.00
-    # tot1_c6: 1.00
-    # tot1_c7: 2.00
-    # tot1_c8: 0.00
-    # tot1_c9: 0.00
-    # totHours1: 8.00
-    # r1_PrjctCDName:
-    # r1_Projname: Admin
-    # r1_Taskname: N0010
-    # r1_Taskname_Dscr: Administrativa a management
-    # r1_Monday: 2.00
-    # r1_Tuesday: 0.00
-    # r1_Wednesday: 0.00
-    # r1_Thursday: 1.00
-    # r1_Friday: 1.00
-    # r1_Saturday: 0.00
-    # r1_Sunday: 0.00
-    # tot21: 4.00
-    # r2_PrjctCDName:
-    # r2_Projname: P29239002
-    # r2_Taskname: N0003
-    # r2_Taskname_Dscr: P projekty
-    # r2_Monday: 1.00
-    # r2_Tuesday: 0.00
-    # r2_Wednesday: 1.00
-    # r2_Thursday: 0.00
-    # r2_Friday: 0.00
-    # r2_Saturday: 0.00
-    # r2_Sunday: 0.00
-    # tot22: 2.00
-    # DSNGlobal: iTime_CZ_SK
-    # r3_PrjctCDName:
-    # r3_Projname: Admin
-    # r3_Taskname: N0009
-    # r3_Taskname_Dscr:
-    # r3_Monday: 0.00
-    # r3_Tuesday: 1
-    # r3_Wednesday: 0.00
-    # r3_Thursday: 0.00
-    # r3_Friday: 1
-    # r3_Saturday: 0.00
-    # r3_Sunday: 0.00
-    # tot23: 2.00
-    # tot2h3: 0.00
-    # DSNGlobal: iTime_CZ_SK
-    # r4_PrjctCDName:
-    # r4_Projname: Select a Project from your list
-    # r4_Taskname:
-    # r4_Taskname_Dscr:
-    # r4_Monday: 0.00
-    # r4_Tuesday: 0.00
-    # r4_Wednesday: 0.00
-    # r4_Thursday: 0.00
-    # r4_Friday: 0.00
-    # r4_Saturday: 0.00
-    # r4_Sunday: 0.00
-    # tot24: 0.00
-    # tot2h4: 0.00
-    # CurrentTotalRows: 4
-    # tot2_c3: 3.00
-    # tot2_c4: 1.00
-    # tot2_c5: 1.00
-    # tot2_c6: 1.00
-    # tot2_c7: 2.00
-    # tot2_c8: 0.00
-    # tot2_c9: 0.00
-    # totHours2: 8.00
-    # Chargeability: Chargeability Rate: 0 %
-    # TmSht_Comments:
-
 
 def process():
     while True:
@@ -671,8 +579,9 @@ def process():
         submit_report(time_card_id, from_date, to_date, entries, account_mapping)
 
 
-itime_login()
-load_jira_account_itime_mapping()
-check_jira_itime_task_mapping()
-process()
-save_jira_account_mapping()
+if __name__ == '__main__':
+    itime_login()
+    load_jira_account_itime_mapping()
+    check_jira_itime_task_mapping()
+    process()
+    save_jira_account_mapping()
