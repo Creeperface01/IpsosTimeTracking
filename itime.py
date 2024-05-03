@@ -34,17 +34,17 @@ jira_account_itime_mapping = {}
 def load_jira_account_itime_mapping():
     global jira_account_itime_mapping
 
-    if not os.path.exists('jira_account_mapping.json'):
-        with io.open('jira_account_mapping.json', 'w') as f:
+    if not os.path.exists('debug/jira_account_mapping.json'):
+        with io.open('debug/jira_account_mapping.json', 'w') as f:
             json.dump(jira_account_itime_mapping, f)
             return
 
-    with io.open('jira_account_mapping.json', 'r') as f:
+    with io.open('debug/jira_account_mapping.json', 'r') as f:
         jira_account_itime_mapping = json.load(f)
 
 
 def save_jira_account_mapping():
-    with io.open('jira_account_mapping.json', 'w') as f:
+    with io.open('debug/jira_account_mapping.json', 'w') as f:
         json.dump(jira_account_itime_mapping, f)
 
 

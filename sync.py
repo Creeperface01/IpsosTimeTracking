@@ -35,7 +35,17 @@ def choose_period():
         end_date = now.start_of('month')
         start_date = now.subtract(months=1).start_of('month')
     elif choice == 'Custom':
-        pass
+        start_date = pendulum.from_format(input('Enter starting date (YYYY-MM-DD): '), 'YYYY-MM-DD')
+
+        if start_date is None:
+            print('Invalid start date')
+            exit(1)
+
+        end_date = pendulum.from_format(input('Enter ending date (YYYY-MM-DD) (exclusive): '), 'YYYY-MM-DD')
+
+        if end_date is None:
+            print('Invalid end date')
+            exit(1)
 
     return start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')
 

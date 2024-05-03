@@ -105,7 +105,7 @@ def import_entries(start_date: str, end_date: str):
 
     entries.sort(key=lambda x: x['date'])
 
-    with io.open('toggl-parsed.json', 'w') as f:
+    with io.open('debug/toggl-parsed.json', 'w') as f:
         f.write(json.dumps(entries, default=str, ensure_ascii=False))
 
     print('Successfully imported {} entries'.format(len(entries)))

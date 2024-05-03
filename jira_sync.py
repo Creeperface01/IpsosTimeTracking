@@ -24,12 +24,41 @@ auth_headers = {
     'Authorization': f'Bearer {tempo_token}'
 }
 
-with io.open('toggl-parsed.json', 'r') as f:
-    data = json.load(f)
-
 issues = {}
 
 issue_key_replacements = {}
+
+WORKLOG_ATTRIBUTE_KEY = '_TOGGL_IMPORTED_'
+WORKLOG_ATTRIBUTE_NAME = 'Toggl imported'
+
+
+def load_toggl_entries():
+    with io.open('debug/toggl-parsed.json', 'r') as f:
+        return json.load(f)
+
+
+def create_worklog_attribute():
+    response = requests.get(
+        f'{tempo_api_url}/work-attributes',
+        headers=auth_headers,
+        params={
+            'key': WORKLOG_ATTRIBUTE_KEY,
+        }
+    )
+    existing_attribute = response.json()
+
+    if len(existing_attribute['results']) > 0:
+        return
+
+    requests.post(
+        f'{tempo_api_url}/work-attributes',
+        headers=auth_headers,
+        json={
+            'key': WORKLOG_ATTRIBUTE_KEY,
+            'name': WORKLOG_ATTRIBUTE_NAME,
+            'type': 'CHECKBOX',
+        }
+    )
 
 
 def get_issue_id(issue_key: str) -> int:
@@ -58,6 +87,8 @@ def get_issue_id(issue_key: str) -> int:
 def import_to_jira():
     print('Starting JIRA import')
 
+    data = load_toggl_entries()
+
     for entry in data:
         tag = entry['tag']
         start_date = parser.parse(entry['date'])
@@ -75,7 +106,13 @@ def import_to_jira():
             'issueId': get_issue_id(tag),
             'timeSpentSeconds': minutes * 60,
             'startDate': start_date.strftime('%Y-%m-%d'),
-            'startTime': start_date.strftime('%H:%M:%S')
+            'startTime': start_date.strftime('%H:%M:%S'),
+            # 'attributes': [
+            #     {
+            #         'key': '_WORKLOG_CREATOR_',
+            #         'value': 'toggl_sync'
+            #     }
+            # ]
         }
 
         response = requests.post(
