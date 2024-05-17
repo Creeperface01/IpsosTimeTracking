@@ -30,6 +30,10 @@ with io.open('jira_itime_task_mapping.json', 'r') as f:
 
 jira_account_itime_mapping = {}
 
+# create debug directory
+if not os.path.exists('debug'):
+    os.makedirs('debug')
+
 
 def load_jira_account_itime_mapping():
     global jira_account_itime_mapping
@@ -83,9 +87,6 @@ session.headers = {
 }
 
 # login to itime
-# session.get(itime_home_url)
-# set login cookie
-# session.cookies.set('CFCLIENT_ITIME', '""')
 
 ITIME_DATE_FORMAT = '%d/%m/%Y'
 TIME_CARD_DATE_REGEX = re.compile(r'\d{2}/\d{2}/\d{4}')
