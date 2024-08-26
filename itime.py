@@ -295,6 +295,11 @@ def find_and_add_itime_project(jira_account: str, project_id: str, existing_proj
     if len(project_list) == 1 and project_list[0].attrs['value'] == '':
         project_list = []
 
+    exact_match = list(filter(lambda x: x.attrs['value'] == project_id, project_list))
+
+    if len(exact_match) != 0:
+        project_list = [exact_match[0]]
+
     if len(project_list) != 1:
         if len(project_list) == 0:
             print('Project id "%s" not found for jira account %s' % (project_id, jira_account))
