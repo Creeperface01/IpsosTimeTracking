@@ -6,13 +6,13 @@ Copy [.env.example](.env.example) to `.env` and fill required credentials
 
 `toggl_api_token` and `tempo_api_token` are required only for Toggl import
 
-### Create venv
+### Create environemnt
 
-`python -m virtualenv venv`
+This project uses [poetry](https://python-poetry.org/docs/) for dependency management.
 
-### Enter venv
-
-`source venv/bin/activate`
+- Install dependencies: `poetry install`
+- Enter python shell: `poetry shell`
+- Run scripts: `python itime.py`
 
 ## Importing JIRA entries from Toggl
 
