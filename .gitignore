@@ -265,3 +265,4 @@ cython_debug/
 test*
 !/jira_itime_task_mapping.json
 !/jira_account_mapping.example.json
+itime_cookies.txt

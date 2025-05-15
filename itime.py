@@ -61,7 +61,7 @@ tempo_auth_headers = {
     'Authorization': f'Bearer {tempo_token}'
 }
 
-itime_base_url = 'https://itimes7.ipsos.com'
+itime_base_url = 'https://itime.ipsos.com/'
 itime_url = '/iTime_CZ_SK/TmCrdForm.cfm'
 itime_login_url = '/default.cfm?Debug=On&OpenType=Default&OpenID=0'
 itime_home_url = '/iTime_CZ_SK/TmCrdForm.cfm'
@@ -96,6 +96,18 @@ TEMPO_DATE_FORMAT = '%Y-%m-%d'
 WEEK_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 
+def load_itime_cookies():
+    print('Loading itime cookies...')
+    with io.open('itime_cookies.txt', 'r') as cookie_file:
+        itime_cookies = cookie_file.read()
+        itime_cookies = itime_cookies.split(';')
+
+        for cookie in itime_cookies:
+            cookie = cookie.strip()
+            cookie = cookie.split('=')
+            session.cookies.set(cookie[0], cookie[1])
+
+
 def debug_file(name: str, content: str):
     with io.open(name, 'w') as f:
         f.write(content)
@@ -127,18 +139,20 @@ def itime_request(method: str, url: str, **kwargs: any) -> requests.Response:
 
 
 def itime_login():
-    print('Logging into itime...')
-    response = itime_request('GET', itime_url)
-    url = urlparse(response.url)
-    base_url = url.scheme + '://' + url.netloc
+    # TODO: fix MS login
+    # print('Logging into itime...')
+    # response = itime_request('GET', itime_url)
+    # url = urlparse(response.url)
+    # base_url = url.scheme + '://' + url.netloc
+    #
+    # if 'itimeAuths' in base_url:
+    #     print('Cannot login.')
+    #     print('Update your password in .env (needs to be base64 encoded)')
+    #     exit(1)
 
-    if 'itimeAuths' in base_url:
-        print('Cannot login.')
-        print('Update your password in .env (needs to be base64 encoded)')
-        exit(1)
-
-    global itime_base_url
-    itime_base_url = base_url
+    load_itime_cookies()
+    # global itime_base_url
+    # itime_base_url = base_url
 
 
 def check_jira_itime_task_mapping():
