@@ -2,6 +2,8 @@ import os
 import os.path
 import io
 import json
+from typing import Optional, Tuple
+
 import requests
 from dotenv import load_dotenv
 from dateutil import parser
@@ -65,6 +67,7 @@ itime_base_url = 'https://itime.ipsos.com/'
 itime_url = '/iTime_CZ_SK/TmCrdForm.cfm'
 itime_login_url = '/default.cfm?Debug=On&OpenType=Default&OpenID=0'
 itime_home_url = '/iTime_CZ_SK/TmCrdForm.cfm'
+itime_existing_sheets_url = '/iTime_CZ_SK/MgrFetchAprvlData.cfm?action=25' # TODO: check parameter, maybe year?
 
 itime_timesheet_create_url = '/iTime_CZ_SK/TmCrdEntry.CFM'  # ?TimeCard_ID=0
 itime_timesheet_detail_url = '/iTime_CZ_SK/TmCrdEntry.CFM'  # param TimeCard_ID
@@ -89,6 +92,7 @@ session.headers = {
 # login to itime
 
 ITIME_DATE_FORMAT = '%d/%m/%Y'
+ITIME_JSON_DATE_FORMAT = '%m/%d/%Y'
 TIME_CARD_DATE_REGEX = re.compile(r'\d{2}/\d{2}/\d{4}')
 
 TEMPO_DATE_FORMAT = '%Y-%m-%d'
@@ -250,41 +254,51 @@ def get_jira_entries(date_from: datetime, date_to: datetime):
     return accounts
 
 
+def get_next_timesheet() -> Optional[Tuple[date, str]]:
+    current_year = date.today().year
+    next_year = current_year + 1
+
+    response = itime_request(
+        'POST',
+        itime_existing_sheets_url,
+        data={
+            'startDate': '01/01/' + str(current_year),
+            'endDate': '01/01/' + str(next_year),
+        }
+    )
+    data = response.json()
+
+    existing_sheets = data['Created_not_submitted']
+
+    next_sheet = existing_sheets[0] if existing_sheets else None
+
+    if next_sheet is None:
+        future_sheets = data['future_notcreated']
+        next_sheet = future_sheets[0] if future_sheets else None
+
+    if next_sheet is not None:
+        # 06/15/2025
+        split = next_sheet.split('^')
+        end_date = datetime.strptime(split[0], ITIME_JSON_DATE_FORMAT).date()
+        timecard_id = split[1]
+
+        return end_date, str(timecard_id)
+
+    return None
+
+
 def get_first_not_submitted_week() -> (str, date, date):
-    response = itime_request('GET', itime_home_url)
+    itime_request('GET', itime_home_url)
 
-    soup = BeautifulSoup(response.text, 'html5lib')
+    next_timesheet = get_next_timesheet()
 
-    # select existing timesheets
-    time_sheet = None
-    time_sheets = soup.select('form select[name="TimeCard_ID"] option:not([value="0"])')
-    time_sheets.reverse()
+    if next_timesheet is None:
+        raise ValueError('No timesheet found. Check itime manually and/or report a bug.')
 
-    for option in time_sheets:
-        if '(Submitted )' not in option.text:
-            time_sheet = option
-            break
+    end_date, time_card_id = next_timesheet
+    start_date = end_date - timedelta(days=6)
 
-    if time_sheet is None:
-        print('create new sheet')
-        # create new timesheet if not exists
-        timesheet_detail_response = itime_request('GET', itime_timesheet_create_url, params={'TimeCard_ID': '0'})
-
-        timesheet_soup = BeautifulSoup(timesheet_detail_response.text, 'html5lib')
-
-        date_input = timesheet_soup.select_one('#cal-field-1')
-        date_label = date_input.parent.select_one('font')
-
-        match = TIME_CARD_DATE_REGEX.findall(date_label.text.strip())
-        time_card_id = timesheet_soup.select_one('input[name="TmCrdID"]').attrs['value']
-    else:
-        match = TIME_CARD_DATE_REGEX.findall(time_sheet.text.strip())
-        time_card_id = time_sheet.attrs['value']
-
-    end = datetime.strptime(match[0], ITIME_DATE_FORMAT).date()
-    start = end - timedelta(days=6)
-
-    return time_card_id, start, end
+    return time_card_id, start_date, end_date
 
 
 PERSONAL_PROJECTS_LIST_ID = 'EmplyPrjct_Lst'

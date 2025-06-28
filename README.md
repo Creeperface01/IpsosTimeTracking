@@ -1,3 +1,8 @@
+# $${\color{red}!! IMPORTANT !!}$$
+
+### Itime started using microsoft auth, which hasn't been implemented yet into this script.
+### To make it work login into itime manually and copy your cookies into `itime_cookies.txt` file in working directory.
+
 # Usage
 
 ## Configuration
