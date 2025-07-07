@@ -273,6 +273,10 @@ def get_next_timesheet() -> Optional[Tuple[date, str]]:
     next_sheet = existing_sheets[0] if existing_sheets else None
 
     if next_sheet is None:
+        missing_late = data['Missing_late']
+        next_sheet = missing_late[0] if missing_late else None
+
+    if next_sheet is None:
         future_sheets = data['future_notcreated']
         next_sheet = future_sheets[0] if future_sheets else None
 
